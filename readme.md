@@ -21,14 +21,27 @@ docker compose exec python-dev zsh
 docker compose exec python-dev env-check
 ```
 
-## 🛠️ Available Tools & Aliases
-- `rg` (ripgrep) - Fast text search
-- `bat` - Enhanced cat with syntax highlighting  
-- `btop` - Modern system monitor
-- `yq` - YAML/JSON processor
-- `uv` - Fast Python package manager
+## 🛠️ Available Tools & Enhanced Aliases
 
-**Aliases**: `cat`→`bat`, `grep`→`rg`, `top`→`btop`, `pip`→`uv pip`
+### Enhanced Command Aliases
+- `cat` → `bat` - Syntax highlighting & line numbers
+- `grep` → `rg` - Faster search with better output
+- `top` → `btop` - Modern system monitor
+- `pip` → `uv pip` - Faster package manager
+- `pip3` → `uv pip` - Faster package manager
+
+### Additional Tools
+- `yq` - YAML/JSON processor
+- `jq` - JSON processor
+- Standard `ls` aliases: `ll`, `la`, `l`
+
+### Accessing Original Commands
+If you need the original command behavior:
+```bash
+command cat file.txt    # Use original cat
+command grep pattern    # Use original grep
+command top            # Use original top
+```
 
 ## 📁 Project Structure
 ```

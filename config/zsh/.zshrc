@@ -53,3 +53,13 @@ fi
 
 # Welcome message
 echo "🐍 Python Development Environment"
+echo ""
+echo "📋 Enhanced Command Aliases:"
+echo "  cat  → bat     (syntax highlighting & line numbers)"
+echo "  grep → rg      (ripgrep - faster search)"
+echo "  top  → btop    (modern system monitor)"
+echo "  pip  → uv pip  (faster package manager)"
+echo "  pip3 → uv pip  (faster package manager)"
+echo ""
+echo "💡 Use 'command <original>' to access original tools if needed"
+echo "   Example: command cat file.txt"
