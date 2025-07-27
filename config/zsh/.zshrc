@@ -10,12 +10,12 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
-# Python virtual environment configuration
-export VIRTUAL_ENV=/opt/venv
-export PATH="$VIRTUAL_ENV/bin:$PATH"
-export PYTHONPATH=/app
-export PYTHONDONTWRITEBYTECODE=1
-export PYTHONUNBUFFERED=1
+# # Python virtual environment configuration
+# export VIRTUAL_ENV=/opt/venv
+# export PATH="$VIRTUAL_ENV/bin:$PATH"
+# export PYTHONPATH=/app
+# export PYTHONDONTWRITEBYTECODE=1
+# export PYTHONUNBUFFERED=1
 
 # Tool aliases
 alias cat='bat'

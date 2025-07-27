@@ -109,13 +109,6 @@ ENV TERM=xterm-256color
 
 # Install Rust and UV, setup Python environment in one layer
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    python -m venv /opt/venv
-
-# Set environment variables
-ENV PATH="/root/.cargo/bin:/root/.local/bin:${PATH}"
-ENV PIP_REQUIRE_VIRTUALENV=false
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+    curl -LsSf https://astral.sh/uv/install.sh | sh
 
 WORKDIR /app
