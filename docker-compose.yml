@@ -1,0 +1,18 @@
+services:
+  python-dev:
+    build: .
+    volumes:
+      - /Users/tsung/Desktop/work/python_script/git:/app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SHELL=/bin/zsh
+      - ZSH_THEME=powerlevel10k/powerlevel10k
+    command: tail -f /dev/null
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
