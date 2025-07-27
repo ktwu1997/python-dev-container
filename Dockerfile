@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     # Development tools
     git \
     zsh \
+    vim \
     net-tools \
     jq \
     lftp \

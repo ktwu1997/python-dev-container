@@ -31,6 +31,7 @@ docker compose exec python-dev env-check
 - `pip3` → `uv pip` - Faster package manager
 
 ### Additional Tools
+- `vim` - Text editor
 - `yq` - YAML/JSON processor
 - `jq` - JSON processor
 - Standard `ls` aliases: `ll`, `la`, `l`
