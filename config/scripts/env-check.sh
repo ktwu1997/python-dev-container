@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Enhanced Python Development Environment Check Script
-echo "🐍 Enhanced Python Development Environment - Health Check"
+echo "Enhanced Python Development Environment - Health Check"
 echo "========================================================"
 
 # Color codes for output
@@ -78,6 +78,7 @@ check_command "pip" "" "Pip (should be aliased to uv pip)"
 
 echo -e "\n${BLUE}4. Development Tools${NC}"
 check_command "git" "git version" "Git"
+check_command "vim" "VIM.*version" "Vim"
 check_command "rg" "ripgrep" "Ripgrep"
 check_command "bat" "bat" "Bat"
 check_command "btop" "" "Btop"

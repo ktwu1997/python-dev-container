@@ -52,7 +52,7 @@ else
 fi
 
 # Welcome message
-echo "🐍 Python Development Environment"
+echo "Python Development Environment"
 echo ""
 echo "📋 Enhanced Command Aliases:"
 echo "  cat  → bat     (syntax highlighting & line numbers)"
