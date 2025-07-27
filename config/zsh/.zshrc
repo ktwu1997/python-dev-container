@@ -36,20 +36,7 @@ alias health-check='env-check'
 # Load Powerlevel10k configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Auto-activate virtual environment with error handling
-if [[ -n "$VIRTUAL_ENV" ]]; then
-    if [[ -d "$VIRTUAL_ENV" ]]; then
-        if [[ "$VIRTUAL_ENV/bin" != *"$PATH"* ]]; then
-            export PATH="$VIRTUAL_ENV/bin:$PATH"
-        fi
-    else
-        echo "⚠️  Virtual environment path not found: $VIRTUAL_ENV"
-        echo "    Creating new virtual environment..."
-        python -m venv "$VIRTUAL_ENV" 2>/dev/null || echo "❌ Failed to create virtual environment"
-    fi
-else
-    echo "⚠️  VIRTUAL_ENV not set. Python packages will be installed globally."
-fi
+
 
 # Welcome message
 echo "Python Development Environment"
