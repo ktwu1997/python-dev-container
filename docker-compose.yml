@@ -5,7 +5,7 @@ services:
     ports:
       - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env
     volumes:
-      - /Users/tsung/Desktop/work/python_script/git:/app
+      - ${HOST_WORK_DIR}:/app
       - ~/.ssh:/root/.ssh:ro  # Optional: mount SSH keys
     environment:
       - PYTHONPATH=/app

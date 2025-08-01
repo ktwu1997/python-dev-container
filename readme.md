@@ -15,8 +15,8 @@ A clean Python development container with ZSH, Powerlevel10k, and essential deve
 # Copy environment configuration
 cp .env.example .env
 
-# Customize your SSH credentials in .env file
-# Edit SSH_PORT, SSH_USER, SSH_PASSWORD as needed
+# Customize your configuration in .env file
+# Edit HOST_WORK_DIR, SSH_PORT, SSH_USER, SSH_PASSWORD as needed
 
 # Build and start
 docker compose up -d --build
@@ -43,9 +43,14 @@ First, copy the example environment file and customize it:
 cp .env.example .env
 ```
 
-Edit `.env` file to set your SSH credentials:
+Edit `.env` file to configure your environment:
 
 ```bash
+# Volume mount - specify your local work directory
+HOST_WORK_DIR=./                    # Current directory (default)
+# HOST_WORK_DIR=/path/to/your/code  # Or absolute path
+
+# SSH Configuration
 SSH_PORT=2222           # External SSH port
 SSH_USER=developer      # SSH username  
 SSH_PASSWORD=dev123456  # SSH password (change this!)
