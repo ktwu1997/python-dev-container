@@ -25,6 +25,30 @@ p10k configure
 docker compose exec python-dev env-check
 ```
 
+## 🔐 SSH Access
+
+The container automatically starts SSH service with configurable credentials:
+
+### Configuration (.env file)
+
+```bash
+SSH_PORT=2222           # External SSH port
+SSH_USER=developer      # SSH username
+SSH_PASSWORD=dev123456  # SSH password
+```
+
+### Connect via SSH
+
+```bash
+# Connect to container via SSH
+ssh -p 2222 developer@localhost
+
+# Test SSH connection
+docker compose exec python-dev test-ssh
+```
+
+The SSH user has full sudo privileges within the container.
+
 ## 🛠️ Available Tools & Enhanced Aliases
 
 ### Enhanced Command Aliases
@@ -100,3 +124,5 @@ The configuration is stored in `~/.p10k.zsh`. You can:
 
 - `env-check` - Environment health check
 - `fallback-shell` - Basic shell if ZSH fails
+- `test-ssh` - Test SSH connection configuration
+- `ssh-setup` - Initialize SSH service (runs automatically)

@@ -1,15 +1,23 @@
 services:
   python-dev:
     build: .
+    container_name: python-dev-container
+    ports:
+      - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env
     volumes:
       - /Users/tsung/Desktop/work/python_script/git:/app
+      - ~/.ssh:/root/.ssh:ro  # Optional: mount SSH keys
     environment:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
       - SHELL=/bin/zsh
       - ZSH_THEME=powerlevel10k/powerlevel10k
-    command: tail -f /dev/null
+      - SSH_USER=${SSH_USER}
+      - SSH_PASSWORD=${SSH_PASSWORD}
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
     networks:
       - app-net
 

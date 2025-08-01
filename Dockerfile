@@ -20,6 +20,9 @@ RUN apt-get update && apt-get install -y \
     jq \
     lftp \
     moreutils \
+    # SSH server and sudo
+    openssh-server \
+    sudo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -81,7 +84,9 @@ COPY config/scripts/env-check.sh /usr/local/bin/env-check
 COPY config/scripts/fallback-shell.sh /usr/local/bin/fallback-shell
 COPY config/scripts/docker-zsh-setup.sh /usr/local/bin/docker-zsh-setup
 COPY config/scripts/test-terminal-output.sh /usr/local/bin/test-terminal
-RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/docker-zsh-setup /usr/local/bin/test-terminal
+COPY config/scripts/ssh-setup.sh /usr/local/bin/ssh-setup
+COPY config/scripts/test-ssh.sh /usr/local/bin/test-ssh
+RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/docker-zsh-setup /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh
 
 # Set ZSH as default shell
 RUN chsh -s $(which zsh)
@@ -111,4 +116,18 @@ ENV TERM=xterm-256color
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# Create SSH directory and configure sudo
+RUN mkdir -p /var/run/sshd && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Expose SSH port
+EXPOSE 22
+
 WORKDIR /app
+
+# Create startup script
+RUN echo '#!/bin/bash\nssh-setup\nexec "$@"' > /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["zsh"]
