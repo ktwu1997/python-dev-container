@@ -125,6 +125,9 @@ EXPOSE 22
 
 WORKDIR /app
 
+# Ensure /app directory has proper permissions
+RUN chmod 755 /app
+
 # Create startup script
 RUN echo '#!/bin/bash\nssh-setup\nexec "$@"' > /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
