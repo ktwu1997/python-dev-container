@@ -36,6 +36,9 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Fix ZSH configuration paths for the SSH user
     sed -i "s|/root/.oh-my-zsh|/home/$SSH_USER/.oh-my-zsh|g" "/home/$SSH_USER/.zshrc"
     
+    # Create a symbolic link from user home to /app for convenience
+    sudo -u "$SSH_USER" ln -sf /app "/home/$SSH_USER/app"
+    
     # Set proper ownership
     chown -R "$SSH_USER:$SSH_USER" "/home/$SSH_USER"
     
