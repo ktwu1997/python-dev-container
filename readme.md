@@ -16,7 +16,7 @@ A clean Python development container with ZSH, Powerlevel10k, and essential deve
 cp .env.example .env
 
 # Customize your configuration in .env file
-# Edit HOST_WORK_DIR, SSH_PORT, SSH_USER, SSH_PASSWORD as needed
+# Edit CONTAINER_NAME, HOST_WORK_DIR, SSH_PORT, SSH_USER, SSH_PASSWORD as needed
 
 # Build and start
 docker compose up -d --build
@@ -46,6 +46,9 @@ cp .env.example .env
 Edit `.env` file to configure your environment:
 
 ```bash
+# Container configuration
+CONTAINER_NAME=python-dev-container  # Container name (customize as needed)
+
 # Volume mount - specify your local work directory
 HOST_WORK_DIR=./                    # Current directory (default)
 # HOST_WORK_DIR=/path/to/your/code  # Or absolute path
