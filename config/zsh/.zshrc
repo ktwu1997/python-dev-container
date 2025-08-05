@@ -10,6 +10,9 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
+# Add Rust and UV to PATH
+export PATH="$HOME/.cargo/bin:$PATH"
+
 # # Python virtual environment configuration
 # export VIRTUAL_ENV=/opt/venv
 # export PATH="$VIRTUAL_ENV/bin:$PATH"

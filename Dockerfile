@@ -111,10 +111,12 @@ COPY config/zsh/.p10k.zsh /root/.p10k.zsh
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV TERM=xterm-256color
+ENV PATH="/root/.cargo/bin:$PATH"
 
 # Install Rust and UV, setup Python environment in one layer
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /root/.bashrc
 
 # Create SSH directory and configure sudo
 RUN mkdir -p /var/run/sshd && \
