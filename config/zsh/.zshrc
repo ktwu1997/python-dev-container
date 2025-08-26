@@ -39,10 +39,6 @@ alias health-check='env-check'
 # Load Powerlevel10k configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Auto change to /app directory for SSH sessions
-if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
-    cd /app 2>/dev/null || true
-fi
 
 # Welcome message
 echo "Python Development Environment"

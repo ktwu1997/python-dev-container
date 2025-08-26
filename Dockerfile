@@ -86,7 +86,8 @@ COPY config/scripts/docker-zsh-setup.sh /usr/local/bin/docker-zsh-setup
 COPY config/scripts/test-terminal-output.sh /usr/local/bin/test-terminal
 COPY config/scripts/ssh-setup.sh /usr/local/bin/ssh-setup
 COPY config/scripts/test-ssh.sh /usr/local/bin/test-ssh
-RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/docker-zsh-setup /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh
+COPY config/scripts/test-python-env.sh /usr/local/bin/test-python-env
+RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/docker-zsh-setup /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/test-python-env
 
 # Set ZSH as default shell
 RUN chsh -s $(which zsh)
