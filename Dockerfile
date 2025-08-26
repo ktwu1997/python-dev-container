@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 # Install system dependencies and development tools in one layer
 RUN apt-get update && apt-get install -y \
