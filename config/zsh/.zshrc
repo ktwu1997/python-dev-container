@@ -39,20 +39,39 @@ alias health-check='env-check'
 # Load Powerlevel10k configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
+# Function to show welcome message after prompt is ready
+show_welcome() {
+    echo "Python Development Environment"
+    echo ""
+    echo "📋 Enhanced Command Aliases:"
+    echo "  cat  → bat     (syntax highlighting & line numbers)"
+    echo "  grep → rg      (ripgrep - faster search)"
+    echo "  top  → btop    (modern system monitor)"
+    echo "  pip  → uv pip  (faster package manager)"
+    echo "  pip3 → uv pip  (faster package manager)"
+    echo ""
+    echo "⚡ Powerlevel10k Setup:"
+    echo "  Run 'p10k configure' to customize your prompt theme"
+    echo "  This will create a personalized .p10k.zsh configuration"
+    echo ""
+    echo "💡 Use 'command <original>' to access original tools if needed"
+    echo "   Example: command cat file.txt"
+}
 
-# Welcome message
-echo "Python Development Environment"
-echo ""
-echo "📋 Enhanced Command Aliases:"
-echo "  cat  → bat     (syntax highlighting & line numbers)"
-echo "  grep → rg      (ripgrep - faster search)"
-echo "  top  → btop    (modern system monitor)"
-echo "  pip  → uv pip  (faster package manager)"
-echo "  pip3 → uv pip  (faster package manager)"
-echo ""
-echo "⚡ Powerlevel10k Setup:"
-echo "  Run 'p10k configure' to customize your prompt theme"
-echo "  This will create a personalized .p10k.zsh configuration"
-echo ""
-echo "💡 Use 'command <original>' to access original tools if needed"
-echo "   Example: command cat file.txt"
+# Show welcome message after prompt is ready (deferred execution)
+# This prevents interference with Powerlevel10k instant prompt
+if [[ -o interactive ]]; then
+    # Schedule welcome message to run after current command completes
+    zle -N show_welcome_widget
+    show_welcome_widget() { show_welcome }
+    # Use precmd hook to show welcome message on first interactive prompt
+    precmd_show_welcome() {
+        show_welcome
+        # Remove this function after first execution
+        unfunction precmd_show_welcome 2>/dev/null
+    }
+    # Only add if not already in precmd_functions
+    if [[ ! " ${precmd_functions[*]} " =~ " precmd_show_welcome " ]]; then
+        precmd_functions+=(precmd_show_welcome)
+    fi
+fi

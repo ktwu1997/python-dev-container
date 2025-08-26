@@ -29,12 +29,25 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     sudo -u "$SSH_USER" git clone https://github.com/zsh-users/zsh-autosuggestions "/home/$SSH_USER/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
     sudo -u "$SSH_USER" git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "/home/$SSH_USER/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
     
-    # Copy ZSH configuration to user home
+    # Copy ZSH configuration to user home with proper ownership
     cp /root/.zshrc "/home/$SSH_USER/.zshrc"
     cp /root/.p10k.zsh "/home/$SSH_USER/.p10k.zsh"
     
     # Fix ZSH configuration paths for the SSH user
     sed -i "s|/root/.oh-my-zsh|/home/$SSH_USER/.oh-my-zsh|g" "/home/$SSH_USER/.zshrc"
+    
+    # Create .local/bin directory and ensure proper PATH setup
+    sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.local/bin"
+    
+    # Create a minimal env script if it doesn't exist (to avoid path errors)
+    if [ ! -f "/home/$SSH_USER/.local/bin/env" ]; then
+        echo '#!/bin/bash' > "/home/$SSH_USER/.local/bin/env"
+        echo 'exec /usr/bin/env "$@"' >> "/home/$SSH_USER/.local/bin/env"
+        chmod +x "/home/$SSH_USER/.local/bin/env"
+    fi
+    
+    # Ensure PATH includes user local bin and cargo bin for the SSH user
+    echo 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"' >> "/home/$SSH_USER/.zshrc"
     
     # Create a symbolic link from user home to /app for convenience
     sudo -u "$SSH_USER" ln -sf /app "/home/$SSH_USER/app"
