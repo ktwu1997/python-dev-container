@@ -87,7 +87,8 @@ COPY config/scripts/test-terminal-output.sh /usr/local/bin/test-terminal
 COPY config/scripts/ssh-setup.sh /usr/local/bin/ssh-setup
 COPY config/scripts/test-ssh.sh /usr/local/bin/test-ssh
 COPY config/scripts/test-python-env.sh /usr/local/bin/test-python-env
-RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/docker-zsh-setup /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/test-python-env
+COPY config/scripts/safe-zsh-init.sh /usr/local/bin/safe-zsh-init
+RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/docker-zsh-setup /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/test-python-env /usr/local/bin/safe-zsh-init
 
 # Set ZSH as default shell
 RUN chsh -s $(which zsh)
@@ -113,6 +114,9 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV TERM=xterm-256color
 ENV PATH="/root/.cargo/bin:$PATH"
+# Set ZSH environment variables
+ENV ZSH_CUSTOM=/root/.oh-my-zsh/custom
+ENV POWERLEVEL9K_DISABLE_GITSTATUS=false
 
 # Install Rust and UV, setup Python environment in one layer
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
@@ -132,8 +136,8 @@ WORKDIR /app
 RUN chmod 755 /app
 
 # Create startup script
-RUN echo '#!/bin/bash\nssh-setup\nexec "$@"' > /usr/local/bin/docker-entrypoint.sh && \
+RUN echo '#!/bin/bash\nssh-setup\nexec safe-zsh-init "$@"' > /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["zsh"]
+CMD []
