@@ -40,15 +40,8 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Create .local/bin directory and ensure proper PATH setup
     sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.local/bin"
     
-    # Create a minimal env script if it doesn't exist (to avoid path errors)
-    if [ ! -f "/home/$SSH_USER/.local/bin/env" ]; then
-        echo '#!/bin/bash' > "/home/$SSH_USER/.local/bin/env"
-        echo 'exec /usr/bin/env "$@"' >> "/home/$SSH_USER/.local/bin/env"
-        chmod +x "/home/$SSH_USER/.local/bin/env"
-    fi
-    
-    # Ensure PATH includes user local bin and cargo bin for the SSH user
-    echo 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"' >> "/home/$SSH_USER/.zshrc"
+    # Create .cargo/bin directory for Rust tools if needed
+    sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.cargo/bin"
     
     # Create a symbolic link from user home to /app for convenience
     sudo -u "$SSH_USER" ln -sf /app "/home/$SSH_USER/app"
