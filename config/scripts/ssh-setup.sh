@@ -28,6 +28,7 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Install ZSH plugins for SSH user
     sudo -u "$SSH_USER" git clone https://github.com/zsh-users/zsh-autosuggestions "/home/$SSH_USER/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
     sudo -u "$SSH_USER" git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "/home/$SSH_USER/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+    sudo -u "$SSH_USER" git clone https://github.com/agkozak/zsh-z "/home/$SSH_USER/.oh-my-zsh/custom/plugins/zsh-z"
     
     # Copy ZSH configuration to user home with proper ownership
     cp /root/.zshrc "/home/$SSH_USER/.zshrc"
