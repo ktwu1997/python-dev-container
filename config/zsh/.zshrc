@@ -39,7 +39,7 @@ alias health-check='env-check'
 # Load Powerlevel10k configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Simple welcome function (available on demand)
+# Welcome function
 show_welcome() {
     echo "Python Development Environment"
     echo ""
@@ -59,3 +59,9 @@ show_welcome() {
     echo ""
     echo "Type 'show_welcome' to display this message again"
 }
+
+# Auto-display welcome message for interactive shells
+# Check if this is an interactive shell (ZSH-specific method)
+if [[ -o interactive ]]; then
+    show_welcome
+fi

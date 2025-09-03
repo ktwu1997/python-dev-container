@@ -32,6 +32,7 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     
     # Copy ZSH configuration to user home with proper ownership
     cp /root/.zshrc "/home/$SSH_USER/.zshrc"
+    cp /root/.zshenv "/home/$SSH_USER/.zshenv"
     cp /root/.p10k.zsh "/home/$SSH_USER/.p10k.zsh"
     
     # Fix ZSH configuration paths for the SSH user
