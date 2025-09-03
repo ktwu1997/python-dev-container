@@ -37,8 +37,14 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Fix ZSH configuration paths for the SSH user
     sed -i "s|/root/.oh-my-zsh|/home/$SSH_USER/.oh-my-zsh|g" "/home/$SSH_USER/.zshrc"
     
+    # Fix pip aliases to use user's local UV installation
+    sed -i "s|/root/.local/bin/uv|uv|g" "/home/$SSH_USER/.zshrc"
+    
     # Create .local/bin directory and ensure proper PATH setup
     sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.local/bin"
+    
+    # Install UV for the SSH user (ensure it's in user space)
+    sudo -u "$SSH_USER" curl -LsSf https://astral.sh/uv/install.sh | sudo -u "$SSH_USER" sh
     
     # Create .cargo/bin directory for Rust tools if needed
     sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.cargo/bin"

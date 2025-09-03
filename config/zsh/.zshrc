@@ -29,8 +29,8 @@ alias la='ls -A'
 alias l='ls -CF'
 
 # Development aliases
-alias pip='/root/.local/bin/uv pip'
-alias pip3='/root/.local/bin/uv pip'
+alias pip='uv pip'
+alias pip3='uv pip'
 alias python-check='python --version && pip --version'
 alias tools-check='/tmp/verify-tools.sh 2>/dev/null || echo "Tools verification script not found"'
 alias env-check='env-check'
