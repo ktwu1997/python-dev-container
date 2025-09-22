@@ -18,8 +18,9 @@ services:
     tty: true
     restart: unless-stopped
     networks:
-      - ${OWNER_NAME:-default}-app-net
+      app-net: null
 
 networks:
-  ${OWNER_NAME:-default}-app-net:
+  app-net:
+    name: ${OWNER_NAME:-default}-app-net
     driver: bridge
