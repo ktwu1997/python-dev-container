@@ -1,3 +1,5 @@
+name: ${OWNER_NAME:-default}-python-dev-container
+
 services:
   python-dev:
     build: .
@@ -16,8 +18,8 @@ services:
     tty: true
     restart: unless-stopped
     networks:
-      - app-net
+      - ${OWNER_NAME:-default}-app-net
 
 networks:
-  app-net:
+  ${OWNER_NAME:-default}-app-net:
     driver: bridge
