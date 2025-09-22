@@ -1,7 +1,8 @@
 services:
   python-dev:
     build: .
-    container_name: ${CONTAINER_NAME:-python-dev-container}
+    image: ${OWNER_NAME:-default}-python-dev:latest
+    container_name: ${OWNER_NAME:-default}-python-dev-container
     ports:
       - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env
     volumes:
