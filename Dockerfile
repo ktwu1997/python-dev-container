@@ -132,10 +132,10 @@ RUN mkdir -p /var/run/sshd && \
 # Expose SSH port
 EXPOSE 22
 
-WORKDIR /app
+WORKDIR /workspace
 
-# Ensure /app directory has proper permissions
-RUN chmod 755 /app
+# Ensure /workspace directory has proper permissions
+RUN chmod 755 /workspace
 
 # Create startup script
 RUN echo '#!/bin/bash\nssh-setup\nexec safe-zsh-init "$@"' > /usr/local/bin/docker-entrypoint.sh && \

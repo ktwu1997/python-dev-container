@@ -5,7 +5,7 @@ echo "🔧 Fallback Shell Environment"
 echo "=============================="
 
 # Basic environment setup
-export PYTHONPATH=/app
+export PYTHONPATH=/workspace
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONUNBUFFERED=1
 

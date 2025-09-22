@@ -50,20 +50,20 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Create .cargo/bin directory for Rust tools if needed
     sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.cargo/bin"
     
-    # Create a symbolic link from user home to /app for convenience
-    sudo -u "$SSH_USER" ln -sf /app "/home/$SSH_USER/app"
+    # Create a symbolic link from user home to /workspace for convenience
+    sudo -u "$SSH_USER" ln -sf /workspace "/home/$SSH_USER/workspace"
     
     # Set proper ownership
     chown -R "$SSH_USER:$SSH_USER" "/home/$SSH_USER"
     
-    # Give user write permissions to /app directory
-    chown -R "$SSH_USER:$SSH_USER" /app
-    chmod -R 755 /app
+    # Give user write permissions to /workspace directory
+    chown -R "$SSH_USER:$SSH_USER" /workspace
+    chmod -R 755 /workspace
     
     # Add user to root group for additional permissions
     usermod -aG root "$SSH_USER"
     
-    echo "✅ SSH user '$SSH_USER' created with sudo privileges and /app access"
+    echo "✅ SSH user '$SSH_USER' created with sudo privileges and /workspace access"
 fi
 
 # Configure SSH daemon

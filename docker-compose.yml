@@ -5,7 +5,7 @@ services:
     ports:
       - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env
     volumes:
-      - ${HOST_WORK_DIR}:/app
+      - ${HOST_WORK_DIR}:/workspace
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1

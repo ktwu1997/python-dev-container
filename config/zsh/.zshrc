@@ -16,7 +16,7 @@ export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
 # # Python virtual environment configuration
 # export VIRTUAL_ENV=/opt/venv
 # export PATH="$VIRTUAL_ENV/bin:$PATH"
-# export PYTHONPATH=/app
+# export PYTHONPATH=/workspace
 # export PYTHONDONTWRITEBYTECODE=1
 # export PYTHONUNBUFFERED=1
 
