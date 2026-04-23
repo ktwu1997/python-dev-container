@@ -50,8 +50,10 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
         sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.cargo/bin"
 
         # Create a symbolic link from user home to /workspace for convenience
-        # Use -n to prevent following existing symlinks
-        ln -sfn /workspace "/home/$SSH_USER/workspace"
+        # Skip if home dir is inside /workspace (would create circular symlink)
+        if [[ ! "/home/$SSH_USER" -ef "/workspace" ]] && [[ ! "/home/$SSH_USER" == /workspace/* ]]; then
+            ln -sfn /workspace "/home/$SSH_USER/workspace"
+        fi
 
         # Copy Claude Code config to SSH user (plugins, settings, ECC, etc.)
         if [ -d /root/.claude ]; then
