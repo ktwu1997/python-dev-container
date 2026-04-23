@@ -28,6 +28,9 @@ alias ll='ls -la'
 alias la='ls -A'
 alias l='ls -CF'
 
+# Claude Code alias (default to dangerously-skip-permissions mode)
+alias claude='command claude --dangerously-skip-permissions'
+
 # Development aliases
 alias pip='uv pip'
 alias pip3='uv pip'
@@ -60,8 +63,48 @@ show_welcome() {
     echo "Type 'show_welcome' to display this message again"
 }
 
+# Auto-update Everything Claude Code (checks once per day)
+_ecc_auto_update() {
+  local state="$HOME/.claude/ecc/install-state.json"
+  local stamp="$HOME/.claude/ecc/.last-update-check"
+  local now=$(date +%s)
+
+  # Skip if checked within last 24 hours
+  if [[ -f "$stamp" ]]; then
+    local last=$(<"$stamp")
+    (( now - last < 86400 )) && return 0
+  fi
+
+  # Get local and remote versions
+  local local_ver=""
+  [[ -f "$state" ]] && local_ver=$(python3 -c "import json;print(json.load(open('$state')).get('source',{}).get('version',''))" 2>/dev/null)
+
+  local remote_ver=$(curl -sf \
+    "https://raw.githubusercontent.com/affaan-m/everything-claude-code/main/package.json" \
+    | python3 -c "import json,sys;print(json.load(sys.stdin).get('version',''))" 2>/dev/null)
+
+  # Update timestamp
+  mkdir -p "$HOME/.claude/ecc"
+  echo "$now" > "$stamp"
+
+  # Install if no local version or version mismatch
+  if [[ -z "$local_ver" || "$local_ver" != "$remote_ver" ]]; then
+    echo "[ECC] Updating: ${local_ver:-none} -> ${remote_ver}..."
+    (
+      cd /tmp &&
+      rm -rf ecc-auto &&
+      git clone --depth 1 https://github.com/affaan-m/everything-claude-code.git ecc-auto 2>/dev/null &&
+      cd ecc-auto &&
+      npm install --silent 2>/dev/null &&
+      ./install.sh --profile full 2>/dev/null &&
+      cd /tmp && rm -rf ecc-auto
+    ) && echo "[ECC] Updated to ${remote_ver}." || echo "[ECC] Update failed."
+  fi
+}
+
 # Auto-display welcome message for interactive shells
 # Check if this is an interactive shell (ZSH-specific method)
 if [[ -o interactive ]]; then
     show_welcome
+    _ecc_auto_update &!
 fi
