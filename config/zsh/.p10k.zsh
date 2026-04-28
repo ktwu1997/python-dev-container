@@ -25,7 +25,6 @@ fi
   # The list of segments shown on the left. Fill it with the most important segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
-    os_icon                 # os identifier
     dir                     # current directory
     vcs                     # git status
     # =========================[ Line #2 ]=========================
@@ -90,6 +89,10 @@ fi
   # in Pure that makes prompt drift down whenever you use the Alt-C binding from fzf or similar.
   typeset -g POWERLEVEL9K_PROMPT_ADD_NEWLINE=true
 
+  # Nerd Font mode — requires MesloLGS NF (or another Nerd Font) in your terminal
+  typeset -g POWERLEVEL9K_MODE=nerdfont-complete
+  typeset -g POWERLEVEL9K_ICON_PADDING=none
+
   # Magenta prompt symbol if the last command succeeded, red if failed.
   typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=76
   typeset -g POWERLEVEL9K_PROMPT_CHAR_ERROR_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=196
@@ -115,6 +118,50 @@ fi
   # can slow down prompt by 1-2 milliseconds, so it's better to keep it turned off unless you
   # really need it.
   typeset -g POWERLEVEL9K_DISABLE_HOT_RELOAD=true
+
+  # Dark-background color overrides (readable on dark terminals)
+  typeset -g POWERLEVEL9K_DIR_FOREGROUND=31                    # cyan dir
+  typeset -g POWERLEVEL9K_DIR_SHORTENED_FOREGROUND=103         # dim gray for shortened segments
+  typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND=39             # bright blue for anchor dirs
+  typeset -g POWERLEVEL9K_DIR_ANCHOR_BOLD=true
+  typeset -g POWERLEVEL9K_TIME_FOREGROUND=66                   # muted teal-gray time
+  typeset -g POWERLEVEL9K_CONTEXT_DEFAULT_FOREGROUND=180       # warm yellow user@host
+  typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=178          # orange for root
+  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=255               # white OS icon
+  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=76              # green clean branch
+  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=178          # yellow dirty branch
+  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=39          # blue untracked
+  typeset -g POWERLEVEL9K_STATUS_OK_FOREGROUND=70              # green OK
+  typeset -g POWERLEVEL9K_STATUS_ERROR_FOREGROUND=160          # red ERR
+  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=101
+  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND=37
+
+  # ---- Time segment (uses shell TZ, set TZ=Asia/Taipei in .zshenv) ----
+  typeset -g POWERLEVEL9K_TIME_FORMAT='%D{%m-%d %H:%M:%S}'
+  typeset -g POWERLEVEL9K_TIME_UPDATE_ON_COMMAND=true
+
+  # ---- Python virtualenv segment ----
+  typeset -g POWERLEVEL9K_VIRTUALENV_FOREGROUND=37
+  typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_PYTHON_VERSION=true
+  typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_WITH_PYENV=false
+  typeset -g POWERLEVEL9K_VIRTUALENV_LEFT_DELIMITER=''
+  typeset -g POWERLEVEL9K_VIRTUALENV_RIGHT_DELIMITER=''
+  typeset -g POWERLEVEL9K_VIRTUALENV_VISUAL_IDENTIFIER_EXPANSION=''
+
+  # ---- Git (VCS) detailed glyphs ----
+  typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=' '        # nf-oct-git_branch
+  typeset -g POWERLEVEL9K_VCS_COMMIT_ICON=' '        # nf-oct-git_commit
+  typeset -g POWERLEVEL9K_VCS_UNTRACKED_ICON='?'
+  typeset -g POWERLEVEL9K_VCS_UNSTAGED_ICON='±'
+  typeset -g POWERLEVEL9K_VCS_STAGED_ICON='●'
+  typeset -g POWERLEVEL9K_VCS_STASH_ICON='⍟'
+  typeset -g POWERLEVEL9K_VCS_INCOMING_CHANGES_ICON='⇣'
+  typeset -g POWERLEVEL9K_VCS_OUTGOING_CHANGES_ICON='⇡'
+  typeset -g POWERLEVEL9K_VCS_TAG_ICON=' '           # tag glyph
+  typeset -g POWERLEVEL9K_VCS_SHOW_CHANGESET=false
+  typeset -g POWERLEVEL9K_VCS_GIT_HOOKS=(vcs-detect-changes git-untracked git-aheadbehind git-stash git-remotebranch git-tagname)
+  # Override global icon-disable for vcs segment so branch glyph renders before branch name
+  typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_EXPANSION=''
 
   # If p10k is already loaded, reload configuration.
   # This works even with POWERLEVEL9K_DISABLE_HOT_RELOAD=true.

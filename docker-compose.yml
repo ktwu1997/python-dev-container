@@ -17,6 +17,8 @@ services:
       - SSH_PASSWORD=${SSH_PASSWORD}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # Timezone for shell + p10k time segment (override in .env if needed)
+      - TZ=${TZ:-Asia/Taipei}
     deploy:
       resources:
         reservations:

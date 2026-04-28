@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y \
     # SSH server and sudo
     openssh-server \
     sudo \
+    # Timezone data for Asia/Taipei (used by p10k time segment via TZ in .zshenv)
+    tzdata \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -115,9 +117,14 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV TERM=xterm-256color
 ENV PATH="/root/.cargo/bin:$PATH"
+# Timezone (matches TZ in config/zsh/.zshenv so non-interactive shells agree)
+ENV TZ=Asia/Taipei
 # Set ZSH environment variables
 ENV ZSH_CUSTOM=/root/.oh-my-zsh/custom
 ENV POWERLEVEL9K_DISABLE_GITSTATUS=false
+# Powerlevel10k Nerd Font mode (matches POWERLEVEL9K_MODE in .p10k.zsh — host
+# terminal must use a Nerd Font like MesloLGS NF for glyphs to render)
+ENV POWERLEVEL9K_MODE=nerdfont-complete
 
 # Install Rust and UV, setup Python environment in one layer
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
