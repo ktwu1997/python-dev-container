@@ -14,6 +14,12 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
         # First run: create user and full setup
         useradd -m -s /bin/zsh "$SSH_USER"
 
+        # /home/$SSH_USER may already exist (Docker pre-creates it as root when
+        # ~/.claude / ~/.mempalace are bind-mounted), in which case `useradd -m`
+        # leaves it root-owned. Fix that now so the `sudo -u $SSH_USER` steps
+        # below (oh-my-zsh, p10k, uv, cargo) can write into it.
+        chown "$SSH_USER:$SSH_USER" "/home/$SSH_USER"
+
         # Add user to sudo and root groups
         usermod -aG sudo "$SSH_USER"
         usermod -aG root "$SSH_USER"
