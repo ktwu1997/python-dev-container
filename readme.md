@@ -128,6 +128,34 @@ The configuration is stored in `~/.p10k.zsh`. You can:
 - Backup your configuration for reuse
 - Share configurations between containers
 
+## 🤖 AI Tooling & Persistence
+
+The image ships with **Claude Code** (+ the ECC plugin and Anthropic skills marketplace),
+**Gemini CLI**, and **MemPalace** (AI memory). All of these are installed at *build time* as
+Claude Code **plugins** — nothing is copied into `~/.claude` by hand, so they update via
+`claude plugin update` and don't get duplicated on rebuilds.
+
+Two host directories are bind-mounted so state survives container rebuilds/recreates:
+
+| Container path | Host path (`.env`) | What it holds |
+|---|---|---|
+| `~/.claude`    | `HOST_CLAUDE_DIR` (default `./.persist/claude`)       | Claude Code config: `settings.json`, `CLAUDE.md`, `skills/learned/`, plugin cache |
+| `~/.mempalace` | `HOST_MEMPALACE_DIR` (default `./.persist/mempalace`) | MemPalace memory: vector store + knowledge graph (**not reproducible — back this up**) |
+
+`ssh-setup.sh` seeds these from the build-time install **only when they're empty**, so an
+existing palace is never overwritten.
+
+**First-time migration** (if you already have a running container with data): copy your
+current dirs into the host paths *before* the first `docker compose up` with the new mounts —
+from inside the running container, e.g.:
+
+```bash
+mkdir -p /workspace/.persist
+cp -a ~/.claude     /workspace/.persist/claude
+cp -a ~/.mempalace  /workspace/.persist/mempalace
+# (adjust if HOST_WORK_DIR is not this project dir)
+```
+
 ## 📁 Project Structure
 
 ```
@@ -136,6 +164,7 @@ The configuration is stored in `~/.p10k.zsh`. You can:
 ├── config/
 │   ├── zsh/                # ZSH configuration
 │   └── scripts/            # Utility scripts
+├── .persist/               # Bind-mounted ~/.claude & ~/.mempalace (gitignored)
 └── README.md
 ```
 

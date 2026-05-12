@@ -55,12 +55,22 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
             ln -sfn /workspace "/home/$SSH_USER/workspace"
         fi
 
-        # Copy Claude Code config to SSH user (plugins incl. ECC, settings, etc.)
-        if [ -d /root/.claude ]; then
-            cp -r /root/.claude "/home/$SSH_USER/.claude"
+        # Seed Claude Code config from the build-time install ONLY when the SSH
+        # user's ~/.claude is empty/missing. When it is a persisted host volume
+        # (see docker-compose.yml) with existing content, leave it untouched.
+        mkdir -p "/home/$SSH_USER/.claude"
+        if [ -d /root/.claude ] && [ -z "$(ls -A "/home/$SSH_USER/.claude" 2>/dev/null)" ]; then
+            cp -a /root/.claude/. "/home/$SSH_USER/.claude/"
             # Fix hardcoded /root/ paths in plugin manifests & Claude config files
             find "/home/$SSH_USER/.claude" -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" \) \
                 -exec sed -i "s|/root|/home/$SSH_USER|g" {} + 2>/dev/null || true
+        fi
+
+        # MemPalace memory dir — persisted via host volume; the palace itself
+        # bootstraps on first hook run. Seed from the build-time install if any.
+        mkdir -p "/home/$SSH_USER/.mempalace"
+        if [ -d /root/.mempalace ] && [ -z "$(ls -A "/home/$SSH_USER/.mempalace" 2>/dev/null)" ]; then
+            cp -a /root/.mempalace/. "/home/$SSH_USER/.mempalace/"
         fi
 
         # Copy Gemini config to SSH user

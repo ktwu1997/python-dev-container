@@ -10,6 +10,12 @@ services:
     volumes:
       - ${HOST_WORK_DIR}:/workspace
       - ~/.ssh/id_ed25519.pub:/tmp/host_ssh_key.pub:ro
+      # Persist Claude Code config (~/.claude) and MemPalace memory (~/.mempalace)
+      # across container rebuilds/recreates. Host paths come from .env (see
+      # .env.example); ssh-setup.sh seeds them from the build-time install only
+      # when they are empty, so existing memory is never clobbered.
+      - ${HOST_CLAUDE_DIR:-./.persist/claude}:/home/${SSH_USER}/.claude
+      - ${HOST_MEMPALACE_DIR:-./.persist/mempalace}:/home/${SSH_USER}/.mempalace
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1

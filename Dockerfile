@@ -161,7 +161,15 @@ RUN mkdir -p /root/.claude && \
 RUN mkdir -p /root/.claude && \
     claude plugins marketplace add https://github.com/anthropics/skills.git
 
-# Enable auto-update for marketplaces & Gemini config
+# Install MemPalace (AI memory) — Python package + Claude Code plugin.
+# The palace DATA lives at ~/.mempalace and is persisted via a host volume
+# (see docker-compose.yml); only the install is baked into the image here.
+RUN pip install --no-cache-dir mempalace && \
+    mkdir -p /root/.claude && \
+    claude plugin marketplace add https://github.com/milla-jovovich/mempalace.git && \
+    claude plugin install mempalace@mempalace
+
+# Enable marketplace auto-update, register MemPalace auto-save hooks, Gemini config
 RUN python3 -c "\
 import json, pathlib; \
 p = pathlib.Path('/root/.claude/settings.json'); \
@@ -169,6 +177,10 @@ s = json.loads(p.read_text()) if p.exists() else {}; \
 s.setdefault('extraKnownMarketplaces', {}); \
 [s['extraKnownMarketplaces'].setdefault(k, {}).update({'autoUpdate': True}) for k in s['extraKnownMarketplaces']]; \
 s['autoUpdaterStatus'] = 'enabled'; \
+h = s.setdefault('hooks', {}); \
+mp = lambda hook: [{'matcher': '', 'hooks': [{'type': 'command', 'command': '/usr/local/bin/python3 -m mempalace hook run --hook ' + hook + ' --harness claude-code'}]}]; \
+h.setdefault('Stop', mp('stop')); \
+h.setdefault('PreCompact', mp('precompact')); \
 p.write_text(json.dumps(s, indent=2))" && \
     mkdir -p /root/.gemini && echo '{}' > /root/.gemini/projects.json
 
