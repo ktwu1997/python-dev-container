@@ -52,6 +52,13 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
         # Install UV for the SSH user (ensure it's in user space)
         sudo -u "$SSH_USER" curl -LsSf https://astral.sh/uv/install.sh | sudo -u "$SSH_USER" sh
 
+        # Install Claude Code for the SSH user — its own copy under ~/.local/bin.
+        # The Dockerfile only installs claude for root (/root/.local/bin), which
+        # the SSH user can't reach; and ~/.local isn't on a persisted volume, so
+        # without this it only appears after the user first runs `claude` (which
+        # self-bootstraps). Same pattern as the uv install above.
+        sudo -u "$SSH_USER" curl -fsSL https://claude.ai/install.sh | sudo -u "$SSH_USER" bash
+
         # Create .cargo/bin directory for Rust tools if needed
         sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.cargo/bin"
 
