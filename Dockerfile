@@ -30,50 +30,41 @@ RUN apt-get update && apt-get install -y \
 
 
 
-# Install special tools from GitHub releases in one optimized layer
-RUN ARCH=$(dpkg --print-architecture) && echo "Architecture: $ARCH" && \
-    # Get all versions at once
-    RIPGREP_VERSION=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | jq -r .tag_name) && \
-    BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | jq -r .tag_name) && \
-    BTOP_VERSION=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .tag_name) && \
-    YQ_VERSION=$(curl -s https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r .tag_name) && \
-    # Install ripgrep
-    if [ "$ARCH" = "arm64" ]; then \
-    wget -O /tmp/ripgrep.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu.tar.gz" && \
-    tar -xzf /tmp/ripgrep.tar.gz -C /tmp && \
-    cp /tmp/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu/rg /usr/local/bin/ && \
-    chmod +x /usr/local/bin/rg && \
-    rm -rf /tmp/ripgrep.tar.gz /tmp/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu; \
+# Install special tools (ripgrep, bat, btop, yq) from GitHub releases.
+# - ripgrep & bat .deb names embed the version, so query the GitHub API
+#   (with retries; `jq -er` fails the build LOUDLY if rate-limited instead of
+#   silently producing a "download/null/..." URL like the old version did).
+# - btop & yq asset names have no version, so use the redirect-style
+#   releases/latest/download URL — no API call, immune to version surprises.
+RUN set -eu; \
+    DPKG_ARCH="$(dpkg --print-architecture)"; \
+    case "$DPKG_ARCH" in arm64) RUST_ARCH=aarch64;; *) RUST_ARCH=x86_64;; esac; \
+    echo "Arch: $DPKG_ARCH ($RUST_ARCH)"; \
+    RG_TAG="$(curl -sfL --retry 3 --retry-delay 2 https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | jq -er .tag_name)"; \
+    BAT_TAG="$(curl -sfL --retry 3 --retry-delay 2 https://api.github.com/repos/sharkdp/bat/releases/latest | jq -er .tag_name)"; \
+    RG_VER="${RG_TAG#v}"; BAT_VER="${BAT_TAG#v}"; \
+    echo "ripgrep ${RG_TAG} / bat ${BAT_TAG}"; \
+    # ripgrep
+    if [ "$DPKG_ARCH" = "arm64" ]; then \
+      wget -nv -O /tmp/rg.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/${RG_TAG}/ripgrep-${RG_VER}-aarch64-unknown-linux-gnu.tar.gz"; \
+      tar -xzf /tmp/rg.tar.gz -C /tmp; \
+      install -m755 "/tmp/ripgrep-${RG_VER}-aarch64-unknown-linux-gnu/rg" /usr/local/bin/rg; \
+      rm -rf /tmp/rg.tar.gz "/tmp/ripgrep-${RG_VER}-aarch64-unknown-linux-gnu"; \
     else \
-    wget -O /tmp/ripgrep.deb "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION#v}-1_amd64.deb" && \
-    dpkg -i /tmp/ripgrep.deb && \
-    rm /tmp/ripgrep.deb; \
-    fi && \
-    # Install bat
-    if [ "$ARCH" = "arm64" ]; then \
-    wget -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat_${BAT_VERSION#v}_arm64.deb"; \
-    else \
-    wget -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat_${BAT_VERSION#v}_amd64.deb"; \
-    fi && \
-    dpkg -i /tmp/bat.deb && \
-    rm /tmp/bat.deb && \
-    # Install btop
-    if [ "$ARCH" = "arm64" ]; then \
-    wget -O /tmp/btop.tbz "https://github.com/aristocratos/btop/releases/download/${BTOP_VERSION}/btop-aarch64-unknown-linux-musl.tbz"; \
-    else \
-    wget -O /tmp/btop.tbz "https://github.com/aristocratos/btop/releases/download/${BTOP_VERSION}/btop-x86_64-unknown-linux-musl.tbz"; \
-    fi && \
-    tar -xjf /tmp/btop.tbz -C /tmp && \
-    cp /tmp/btop/bin/btop /usr/local/bin/ && \
-    chmod +x /usr/local/bin/btop && \
-    rm -rf /tmp/btop.tbz /tmp/btop && \
-    # Install yq
-    if [ "$ARCH" = "arm64" ]; then \
-    wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_arm64"; \
-    else \
-    wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"; \
-    fi && \
-    chmod +x /usr/local/bin/yq
+      wget -nv -O /tmp/rg.deb "https://github.com/BurntSushi/ripgrep/releases/download/${RG_TAG}/ripgrep_${RG_VER}-1_amd64.deb"; \
+      dpkg -i /tmp/rg.deb; rm /tmp/rg.deb; \
+    fi; \
+    # bat (.deb name = bat_<ver>_<dpkg-arch>.deb)
+    wget -nv -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_TAG}/bat_${BAT_VER}_${DPKG_ARCH}.deb"; \
+    dpkg -i /tmp/bat.deb; rm /tmp/bat.deb; \
+    # btop (asset name has no version)
+    wget -nv -O /tmp/btop.tar.gz "https://github.com/aristocratos/btop/releases/latest/download/btop-${RUST_ARCH}-unknown-linux-musl.tar.gz"; \
+    tar -xzf /tmp/btop.tar.gz -C /tmp; \
+    install -m755 /tmp/btop/bin/btop /usr/local/bin/btop; \
+    rm -rf /tmp/btop.tar.gz /tmp/btop; \
+    # yq (single static binary)
+    wget -nv -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${DPKG_ARCH}"; \
+    chmod 755 /usr/local/bin/yq
 
 # Copy and run tool verification script
 COPY config/scripts/verify-tools.sh /tmp/verify-tools.sh
