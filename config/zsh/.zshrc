@@ -77,48 +77,12 @@ alias health-check='env-check'
 # Load Powerlevel10k configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Auto-update Everything Claude Code (checks once per day)
-_ecc_auto_update() {
-  local state="$HOME/.claude/ecc/install-state.json"
-  local stamp="$HOME/.claude/ecc/.last-update-check"
-  local now=$(date +%s)
-
-  # Skip if checked within last 24 hours
-  if [[ -f "$stamp" ]]; then
-    local last=$(<"$stamp")
-    (( now - last < 86400 )) && return 0
-  fi
-
-  # Get local and remote versions
-  local local_ver=""
-  [[ -f "$state" ]] && local_ver=$(python3 -c "import json;print(json.load(open('$state')).get('source',{}).get('version',''))" 2>/dev/null)
-
-  local remote_ver=$(curl -sf \
-    "https://raw.githubusercontent.com/affaan-m/everything-claude-code/main/package.json" \
-    | python3 -c "import json,sys;print(json.load(sys.stdin).get('version',''))" 2>/dev/null)
-
-  # Update timestamp
-  mkdir -p "$HOME/.claude/ecc"
-  echo "$now" > "$stamp"
-
-  # Install if no local version or version mismatch
-  if [[ -z "$local_ver" || "$local_ver" != "$remote_ver" ]]; then
-    echo "[ECC] Updating: ${local_ver:-none} -> ${remote_ver}..."
-    (
-      cd /tmp &&
-      rm -rf ecc-auto &&
-      git clone --depth 1 https://github.com/affaan-m/everything-claude-code.git ecc-auto 2>/dev/null &&
-      cd ecc-auto &&
-      npm install --silent 2>/dev/null &&
-      ./install.sh --profile full 2>/dev/null &&
-      cd /tmp && rm -rf ecc-auto
-    ) && echo "[ECC] Updated to ${remote_ver}." || echo "[ECC] Update failed."
-  fi
-}
-# Kick off ECC auto-update in background for interactive shells.
-# show_welcome was already called at the top of this file (before p10k
-# instant_prompt) so we don't call it again here.
-[[ -o interactive ]] && _ecc_auto_update &!
+# Everything Claude Code (ECC) is installed as a Claude Code plugin
+# (`claude plugin install ecc@ecc`) and updates via marketplace auto-update /
+# `claude plugin update`. No shell-side auto-updater here on purpose — the old
+# `_ecc_auto_update` ran ECC's `install.sh --profile full` daily, which dumped
+# ~200 files into ~/.claude (agents/ commands/ rules/ scripts/ ...) and shadowed
+# the plugin. If you ever want to force a plugin refresh: `claude plugin update`.
 
 # Load user-local env if present (e.g. uv installed in $HOME/.local)
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
