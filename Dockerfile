@@ -148,13 +148,14 @@ RUN mkdir -p /root/.ssh && \
     ssh-keyscan github.com >> /root/.ssh/known_hosts 2>/dev/null && \
     git config --global credential.helper store
 
-# Install Everything Claude Code (ECC) - pre-install at build time
-RUN cd /tmp && \
-    git clone --depth 1 https://github.com/affaan-m/everything-claude-code.git && \
-    cd everything-claude-code && \
-    npm install --silent && \
-    ./install.sh --profile full && \
-    cd /tmp && rm -rf everything-claude-code
+# Install Everything Claude Code (ECC) as a Claude Code plugin ONLY.
+# Do NOT run ECC's `install.sh --profile full` — that copies ~200 skills/agents/
+# hooks/rules straight into ~/.claude, which shadows the plugin and gets
+# re-created on every rebuild. As a plugin, ECC stays namespaced (ecc:*) and
+# updates cleanly via `claude plugin update` / marketplace auto-update.
+RUN mkdir -p /root/.claude && \
+    claude plugin marketplace add https://github.com/affaan-m/everything-claude-code.git && \
+    claude plugin install ecc@ecc
 
 # Install Anthropic skills marketplace
 RUN mkdir -p /root/.claude && \

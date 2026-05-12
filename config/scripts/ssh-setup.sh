@@ -55,10 +55,10 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
             ln -sfn /workspace "/home/$SSH_USER/workspace"
         fi
 
-        # Copy Claude Code config to SSH user (plugins, settings, ECC, etc.)
+        # Copy Claude Code config to SSH user (plugins incl. ECC, settings, etc.)
         if [ -d /root/.claude ]; then
             cp -r /root/.claude "/home/$SSH_USER/.claude"
-            # Fix any hardcoded /root/ paths in ECC and Claude config files
+            # Fix hardcoded /root/ paths in plugin manifests & Claude config files
             find "/home/$SSH_USER/.claude" -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" \) \
                 -exec sed -i "s|/root|/home/$SSH_USER|g" {} + 2>/dev/null || true
         fi
