@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     vim \
     net-tools \
     jq \
+    btop \
     lftp \
     moreutils \
     # SSH server and sudo
@@ -30,16 +31,17 @@ RUN apt-get update && apt-get install -y \
 
 
 
-# Install special tools (ripgrep, bat, btop, yq) from GitHub releases.
+# Install special tools (ripgrep, bat, yq) from GitHub releases.
 # - ripgrep & bat .deb names embed the version, so query the GitHub API
 #   (with retries; `jq -er` fails the build LOUDLY if rate-limited instead of
 #   silently producing a "download/null/..." URL like the old version did).
-# - btop & yq asset names have no version, so use the redirect-style
+# - yq asset name has no version, so use the redirect-style
 #   releases/latest/download URL — no API call, immune to version surprises.
+# - btop is installed via apt (see the apt-get list above) to avoid the
+#   GitHub 404 that hit its renamed release assets.
 RUN set -eu; \
     DPKG_ARCH="$(dpkg --print-architecture)"; \
-    case "$DPKG_ARCH" in arm64) RUST_ARCH=aarch64;; *) RUST_ARCH=x86_64;; esac; \
-    echo "Arch: $DPKG_ARCH ($RUST_ARCH)"; \
+    echo "Arch: $DPKG_ARCH"; \
     RG_TAG="$(curl -sfL --retry 3 --retry-delay 2 https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | jq -er .tag_name)"; \
     BAT_TAG="$(curl -sfL --retry 3 --retry-delay 2 https://api.github.com/repos/sharkdp/bat/releases/latest | jq -er .tag_name)"; \
     RG_VER="${RG_TAG#v}"; BAT_VER="${BAT_TAG#v}"; \
@@ -57,11 +59,6 @@ RUN set -eu; \
     # bat (.deb name = bat_<ver>_<dpkg-arch>.deb)
     wget -nv -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_TAG}/bat_${BAT_VER}_${DPKG_ARCH}.deb"; \
     dpkg -i /tmp/bat.deb; rm /tmp/bat.deb; \
-    # btop (asset name has no version)
-    wget -nv -O /tmp/btop.tar.gz "https://github.com/aristocratos/btop/releases/latest/download/btop-${RUST_ARCH}-unknown-linux-musl.tar.gz"; \
-    tar -xzf /tmp/btop.tar.gz -C /tmp; \
-    install -m755 /tmp/btop/bin/btop /usr/local/bin/btop; \
-    rm -rf /tmp/btop.tar.gz /tmp/btop; \
     # yq (single static binary)
     wget -nv -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${DPKG_ARCH}"; \
     chmod 755 /usr/local/bin/yq
@@ -122,7 +119,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     curl -LsSf https://astral.sh/uv/install.sh | sh && \
     echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /root/.bashrc
 
-# Install Node.js 22 (required for Gemini CLI and Codex CLI)
+# Install Node.js 22 (required for Claude Code / Codex / Gemini CLI and npm-based tooling)
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -131,8 +128,34 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 RUN curl -fsSL https://claude.ai/install.sh | bash
 ENV PATH="/root/.local/bin:$PATH"
 
-# Install Gemini CLI
-RUN npm install -g @google/gemini-cli
+# Install Antigravity CLI (agy) — Gemini CLI 的接班人
+# gemini-cli 個人版 2026-06-18 停用，npm 套件 @google/gemini-cli 已改為官方安裝腳本
+# 安裝原生 Go binary（預設落在 ~/.local/bin/agy），這裡搬到 /usr/local/bin 讓 root 與
+# SSH user 都能在 PATH 取得，對齊原本 npm -g 的全域行為。
+RUN curl -fsSL https://antigravity.google/cli/install.sh | bash && \
+    if [ -f /root/.local/bin/agy ]; then mv /root/.local/bin/agy /usr/local/bin/agy; fi && \
+    chmod +x /usr/local/bin/agy && \
+    agy --version || true
+
+# ============================================================================
+# Install mempalace (知識管理 / memory-palace 套件)
+# ----------------------------------------------------------------------------
+# 注意：以下安裝指令是「待確認」的範本，預設先註解掉以免打斷 build。
+# 請從遷移腳本產生的備份檔 mempalace_install_info.txt 找出實際安裝方式，
+# 把對應那一行取消註解（並改成正確的套件名稱 / 來源）即可。
+#
+#   a) 一般 PyPI 套件（用容器內的 uv 安裝到系統 python）：
+# RUN uv pip install --system mempalace
+#
+#   b) 當作 CLI 工具安裝：
+# RUN uv tool install mempalace
+#
+#   c) 直接從 GitHub 安裝：
+# RUN uv pip install --system "git+https://github.com/<owner>/<repo>.git"
+#
+# 記憶資料（DB / 檔案）屬於「執行階段資料」，不要寫進 Dockerfile，
+# 它會留在容器可寫層 / 掛載目錄，不受重建影響。
+# ============================================================================
 
 # Install Codex CLI (system-wide, like Gemini). Installing it per-user into
 # ~/.local would live in the ephemeral container layer and vanish on recreate;

@@ -23,17 +23,20 @@ services:
       - PYTHONUNBUFFERED=1
       - SSH_USER=${SSH_USER}
       - SSH_PASSWORD=${SSH_PASSWORD}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # GPU 相關：僅在有 NVIDIA GPU 的 Linux 主機啟用；Mac/OrbStack 無 GPU，保持註解
+      # - NVIDIA_VISIBLE_DEVICES=all
+      # - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       # Timezone for shell + p10k time segment (override in .env if needed)
       - TZ=${TZ:-Asia/Taipei}
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    # GPU 預留：Mac 無 NVIDIA GPU 會導致容器無法啟動，故註解。
+    # 在 GPU Linux 主機上可取消下列註解以啟用 GPU。
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
     stdin_open: true
     tty: true
     restart: unless-stopped
