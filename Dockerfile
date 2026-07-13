@@ -122,7 +122,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     curl -LsSf https://astral.sh/uv/install.sh | sh && \
     echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /root/.bashrc
 
-# Install Node.js 22 (required for Gemini CLI)
+# Install Node.js 22 (required for Gemini CLI and Codex CLI)
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -133,6 +133,12 @@ ENV PATH="/root/.local/bin:$PATH"
 
 # Install Gemini CLI
 RUN npm install -g @google/gemini-cli
+
+# Install Codex CLI (system-wide, like Gemini). Installing it per-user into
+# ~/.local would live in the ephemeral container layer and vanish on recreate;
+# the codex *config* (~/.codex: auth.json, config.toml, AGENTS.md) is persisted
+# separately via a host volume — see docker-compose.yml.
+RUN npm install -g @openai/codex
 
 # Setup GitHub SSH host key & fix git credential helper for HTTPS
 RUN mkdir -p /root/.ssh && \

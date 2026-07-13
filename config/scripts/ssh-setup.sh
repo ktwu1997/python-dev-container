@@ -106,6 +106,13 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
             cp -a /root/.mempalace/. "/home/$SSH_USER/.mempalace/"
         fi
 
+        # Codex config dir (auth.json, config.toml, AGENTS.md) — persisted via
+        # host volume. The CLI itself is installed system-wide in the Dockerfile;
+        # only the config/auth needs to survive a recreate. Nothing to seed: an
+        # empty dir just means `codex login` has not run yet. The chown below
+        # fixes ownership when Docker creates the host dir as root.
+        mkdir -p "/home/$SSH_USER/.codex"
+
         # Copy Gemini config to SSH user
         if [ -d /root/.gemini ]; then
             cp -r /root/.gemini "/home/$SSH_USER/.gemini"
