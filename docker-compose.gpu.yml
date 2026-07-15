@@ -1,0 +1,22 @@
+# GPU override —— 疊加在 base docker-compose.yml 之上，只在有 NVIDIA GPU 的
+# Linux 主機使用。Mac / OrbStack 無 GPU，請「不要」疊這個檔（會讓容器無法啟動）。
+#
+# 用法（有 GPU 的 Linux 主機）：
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+#
+# base（Mac / OrbStack 或不需要 GPU 時）維持原樣即可：
+#   docker compose up -d --build
+#
+# 前置需求：主機已裝 NVIDIA driver + NVIDIA Container Toolkit。
+services:
+  python-dev:
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

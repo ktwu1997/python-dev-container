@@ -25,9 +25,9 @@ services:
       - PYTHONUNBUFFERED=1
       - SSH_USER=${SSH_USER}
       - SSH_PASSWORD=${SSH_PASSWORD}
-      # GPU 相關：僅在有 NVIDIA GPU 的 Linux 主機啟用；Mac/OrbStack 無 GPU，保持註解
-      # - NVIDIA_VISIBLE_DEVICES=all
-      # - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # GPU：base 不含任何 GPU 設定，Mac/OrbStack 直接 `docker compose up` 即可。
+      # 有 NVIDIA GPU 的 Linux 主機請疊加 override 檔以啟用 GPU：
+      #   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
       # Timezone for shell + p10k time segment (override in .env if needed)
       - TZ=${TZ:-Asia/Taipei}
     # ------------------------------------------------------------------
@@ -53,12 +53,7 @@ services:
         reservations:
           cpus: "1.0"
           memory: 1G
-          # GPU 預留：Mac 無 NVIDIA GPU 會導致容器無法啟動，故保持註解。
-          # 在 GPU Linux 主機上可取消下列註解以啟用 GPU。
-          # devices:
-          #   - driver: nvidia
-          #     count: all
-          #     capabilities: [gpu]
+          # GPU 預留移到 docker-compose.gpu.yml（見上方 environment 區塊的用法說明）。
     # 容器 log 輪替上限（避免 log 無限增長把 68GB 可用磁碟塞爆）。
     # 單檔最大 10MB、最多保留 3 個，單一容器 log 上限約 30MB。
     logging:
