@@ -61,6 +61,7 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
         cp /root/.zshrc "/home/$SSH_USER/.zshrc"
         cp /root/.zshenv "/home/$SSH_USER/.zshenv"
         cp /root/.p10k.zsh "/home/$SSH_USER/.p10k.zsh"
+        cp /root/.tmux.conf "/home/$SSH_USER/.tmux.conf"
 
         # Fix ZSH configuration paths for the SSH user
         sed -i "s|/root/.oh-my-zsh|/home/$SSH_USER/.oh-my-zsh|g" "/home/$SSH_USER/.zshrc"

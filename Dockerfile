@@ -109,6 +109,9 @@ COPY config/zsh/.zshrc /root/.zshrc
 COPY config/zsh/.zshenv /root/.zshenv
 COPY config/zsh/.p10k.zsh /root/.p10k.zsh
 
+# Copy tmux configuration
+COPY config/tmux/.tmux.conf /root/.tmux.conf
+
 # Set basic environment variables
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
