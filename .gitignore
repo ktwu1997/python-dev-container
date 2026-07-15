@@ -1,3 +1,12 @@
 .kiro/
 .env
 .persist/
+
+# 個人公鑰清單（真實金鑰不入版控；容器仍從磁碟使用範本以外的實檔）
+config/authorized_keys
+
+# 垃圾檔
+.DS_Store
+**/.DS_Store
+.vscode/
+.claude/

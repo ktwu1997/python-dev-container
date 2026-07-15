@@ -21,13 +21,22 @@ RUN apt-get update && apt-get install -y \
     btop \
     lftp \
     moreutils \
+    tmux \
+    mosh \
     # SSH server and sudo
     openssh-server \
     sudo \
     # Timezone data for Asia/Taipei (used by p10k time segment via TZ in .zshenv)
     tzdata \
+    # Locale data（mosh-server 需要可用的 UTF-8 native locale，如 en_US.UTF-8）
+    locales \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# 產生 en_US.UTF-8 語系。
+# mosh-server 需要一個「可用的」UTF-8 native locale 才會啟動；
+# mosh 客戶端會把本機 LANG=en_US.UTF-8 帶進來，容器若沒產生此語系就會啟動失敗。
+RUN sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen && locale-gen
 
 
 
@@ -119,7 +128,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
     curl -LsSf https://astral.sh/uv/install.sh | sh && \
     echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /root/.bashrc
 
-# Install Node.js 22 (required for Claude Code / Codex / Gemini CLI and npm-based tooling)
+# Install Node.js 22 (required for Claude Code / npm-based tooling)
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -127,6 +136,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 # Install Claude Code (official native installer)
 RUN curl -fsSL https://claude.ai/install.sh | bash
 ENV PATH="/root/.local/bin:$PATH"
+
+# Install OpenAI Codex CLI + Claude Code globally (npm -g 落在 /usr/bin，所有使用者可用)。
+# 上面的原生 Claude Code 只裝在 /root/.local/bin（root 專屬），非 root 的 SSH 使用者
+# (tsung) 讀不到，因此這裡用全域安裝讓 root 與 tsung 都能執行 claude / codex。
+RUN npm install -g @openai/codex @anthropic-ai/claude-code
 
 # Install Antigravity CLI (agy) — Gemini CLI 的接班人
 # gemini-cli 個人版 2026-06-18 停用，npm 套件 @google/gemini-cli 已改為官方安裝腳本
@@ -137,45 +151,10 @@ RUN curl -fsSL https://antigravity.google/cli/install.sh | bash && \
     chmod +x /usr/local/bin/agy && \
     agy --version || true
 
-# ============================================================================
-# Install mempalace (知識管理 / memory-palace 套件)
-# ----------------------------------------------------------------------------
-# 注意：以下安裝指令是「待確認」的範本，預設先註解掉以免打斷 build。
-# 請從遷移腳本產生的備份檔 mempalace_install_info.txt 找出實際安裝方式，
-# 把對應那一行取消註解（並改成正確的套件名稱 / 來源）即可。
-#
-#   a) 一般 PyPI 套件（用容器內的 uv 安裝到系統 python）：
-# RUN uv pip install --system mempalace
-#
-#   b) 當作 CLI 工具安裝：
-# RUN uv tool install mempalace
-#
-#   c) 直接從 GitHub 安裝：
-# RUN uv pip install --system "git+https://github.com/<owner>/<repo>.git"
-#
-# 記憶資料（DB / 檔案）屬於「執行階段資料」，不要寫進 Dockerfile，
-# 它會留在容器可寫層 / 掛載目錄，不受重建影響。
-# ============================================================================
-
-# Install Codex CLI (system-wide, like Gemini). Installing it per-user into
-# ~/.local would live in the ephemeral container layer and vanish on recreate;
-# the codex *config* (~/.codex: auth.json, config.toml, AGENTS.md) is persisted
-# separately via a host volume — see docker-compose.yml.
-RUN npm install -g @openai/codex
-
 # Setup GitHub SSH host key & fix git credential helper for HTTPS
 RUN mkdir -p /root/.ssh && \
     ssh-keyscan github.com >> /root/.ssh/known_hosts 2>/dev/null && \
     git config --global credential.helper store
-
-# Install Everything Claude Code (ECC) as a Claude Code plugin ONLY.
-# Do NOT run ECC's `install.sh --profile full` — that copies ~200 skills/agents/
-# hooks/rules straight into ~/.claude, which shadows the plugin and gets
-# re-created on every rebuild. As a plugin, ECC stays namespaced (ecc:*) and
-# updates cleanly via `claude plugin update` / marketplace auto-update.
-RUN mkdir -p /root/.claude && \
-    claude plugin marketplace add https://github.com/affaan-m/everything-claude-code.git && \
-    claude plugin install ecc@ecc
 
 # Install Anthropic skills marketplace
 RUN mkdir -p /root/.claude && \

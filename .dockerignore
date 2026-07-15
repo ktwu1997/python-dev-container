@@ -1,0 +1,20 @@
+# Git
+.git
+.gitignore
+
+# macOS / editor cruft
+.DS_Store
+**/.DS_Store
+.vscode
+.kiro
+
+# Secrets & local state（.env 含密碼，絕不進 build context / 映像）
+.env
+.claude
+
+# ZSH 設定備份（實際使用的是 config/zsh/.p10k.zsh，backup 不需進 build）
+config/zsh/.p10k.zsh.backup
+
+# 文件（build 不需要）
+CLAUDE.md
+readme.md

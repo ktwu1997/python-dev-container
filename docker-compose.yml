@@ -6,18 +6,20 @@ services:
     image: ${OWNER_NAME:-default}-python-dev:latest
     container_name: ${OWNER_NAME:-default}-python-dev-container
     ports:
-      - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env
+      # 綁定所有網卡（0.0.0.0），允許區網/外部連線。
+      # 安全性依賴：sshd 已設為「僅金鑰登入」（PasswordAuthentication no、PermitRootLogin no）。
+      # 若要對外網開放，記得在路由器/防火牆做好 port forwarding 與來源限制。
+      - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env (all interfaces)
+      # mosh 連線用的 UDP 埠範圍（mosh 預設 60000-61000，這裡開一小段供並行 session）。
+      # 有了這段，mosh 才能在 SSH 起手後切換到 UDP 連線；連 dev_container 時不必手動指定 --port。
+      - "60000-60010:60000-60010/udp"
     volumes:
       - ${HOST_WORK_DIR}:/workspace
-      - ~/.ssh/id_ed25519.pub:/tmp/host_ssh_key.pub:ro
-      # Persist Claude Code config (~/.claude), MemPalace memory (~/.mempalace)
-      # and Codex config (~/.codex — auth.json, config.toml, AGENTS.md) across
-      # container rebuilds/recreates. Host paths come from .env (see
-      # .env.example); ssh-setup.sh seeds them from the build-time install only
-      # when they are empty, so existing memory is never clobbered.
-      - ${HOST_CLAUDE_DIR:-./.persist/claude}:/home/${SSH_USER}/.claude
-      - ${HOST_MEMPALACE_DIR:-./.persist/mempalace}:/home/${SSH_USER}/.mempalace
-      - ${HOST_CODEX_DIR:-./.persist/codex}:/home/${SSH_USER}/.codex
+      # 授權登入的公鑰清單（自維護，與跑在哪台主機無關）。
+      # 內容為一行一把用戶端公鑰；本機 / VPS 部署都用這同一份。
+      - ./config/authorized_keys:/tmp/authorized_keys:ro
+      # 持久家目錄資料（SSH 私鑰…），由 ssh-setup.sh 於啟動時還原到家目錄
+      - ${PERSIST_HOME_DIR}:/persistent
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
@@ -28,15 +30,50 @@ services:
       # - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       # Timezone for shell + p10k time segment (override in .env if needed)
       - TZ=${TZ:-Asia/Taipei}
-    # GPU 預留：Mac 無 NVIDIA GPU 會導致容器無法啟動，故註解。
-    # 在 GPU Linux 主機上可取消下列註解以啟用 GPU。
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+    # ------------------------------------------------------------------
+    # 資源上限（依主機 MacBook Pro 14" M2 Pro / 16GB RAM / ~68GB 可用磁碟 調校）
+    # 目的：重度使用時可衝高效能，但避免吃滿實體記憶體導致 macOS 開始 swap、
+    #       或把有限的磁碟塞爆。若之後升級記憶體/磁碟，再往上調即可。
+    #   limits       = 硬上限，容器最多只能用到這個量。
+    #   reservations = 軟保留，Docker 盡量保證容器至少能拿到這個量。
+    # 注意：這些上限受 OrbStack 全域設定約束——compose 的上限不可超過
+    #       OrbStack 分配給 Linux VM 的 CPU/記憶體總量（見 OrbStack > Settings > Resources）。
+    # ------------------------------------------------------------------
+    deploy:
+      resources:
+        limits:
+          # 注意：上限不可超過 OrbStack 分配給 Linux VM 的 vCPU 數。
+          # 實測此機 OrbStack VM 目前為 6 vCPU，故上限設 5（留 1 顆給 VM/其他容器）。
+          # 若要更高，先到 OrbStack > Settings > Resources 調高 CPU，再回來調大這裡。
+          cpus: "5.0"
+          # 上限不可超過 OrbStack VM 的 Memory limit（此機設 8 GiB）。
+          # 設 7G 留 1 GiB 餘裕給 VM/其他容器；超過此值容器內程式會被 OOM kill，
+          # 而不是拖垮整台 Mac。若把 OrbStack 記憶體上限調高，可再往上調這裡。
+          memory: 7G
+        reservations:
+          cpus: "1.0"
+          memory: 1G
+          # GPU 預留：Mac 無 NVIDIA GPU 會導致容器無法啟動，故保持註解。
+          # 在 GPU Linux 主機上可取消下列註解以啟用 GPU。
+          # devices:
+          #   - driver: nvidia
+          #     count: all
+          #     capabilities: [gpu]
+    # 容器 log 輪替上限（避免 log 無限增長把 68GB 可用磁碟塞爆）。
+    # 單檔最大 10MB、最多保留 3 個，單一容器 log 上限約 30MB。
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # 健康檢查：確認容器內 sshd 真的在 port 22 監聽（而非只是程序還活著）。
+    # docker ps / OrbStack 會顯示 healthy / unhealthy 狀態。
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/localhost/22' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     stdin_open: true
     tty: true
     restart: unless-stopped

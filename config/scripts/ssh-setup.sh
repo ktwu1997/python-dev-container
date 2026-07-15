@@ -3,9 +3,31 @@
 # SSH Setup Script for Docker Container
 echo "🔐 Setting up SSH service..."
 
-# Generate SSH host keys if they don't exist
+# ── SSH host key 持久化 ──
+# 讓容器重建後 host key 維持不變，避免用戶端每次都跳
+# "REMOTE HOST IDENTIFICATION HAS CHANGED" 警告、還要手動刪 known_hosts。
+# 流程：先從 /persistent 還原既有 host key → 沒有才產生 → 首次產生後備份回 /persistent。
+HOSTKEY_STORE=/persistent/ssh_host_keys
+
+# 1) 有持久化的 host key 就先還原到 /etc/ssh
+if [ -d /persistent ] && ls "$HOSTKEY_STORE"/ssh_host_*_key >/dev/null 2>&1; then
+    cp -a "$HOSTKEY_STORE"/ssh_host_* /etc/ssh/ 2>/dev/null || true
+    chmod 600 /etc/ssh/ssh_host_*_key 2>/dev/null || true
+    chmod 644 /etc/ssh/ssh_host_*_key.pub 2>/dev/null || true
+    echo "✅ 已從 /persistent 還原 SSH host key（重建後 host key 不變）"
+fi
+
+# 2) 若還原後仍沒有 host key（首次啟動）才產生
 if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
     ssh-keygen -A
+fi
+
+# 3) 首次產生的 host key 備份到 /persistent，供未來重建沿用
+if [ -d /persistent ] && ! ls "$HOSTKEY_STORE"/ssh_host_*_key >/dev/null 2>&1; then
+    mkdir -p "$HOSTKEY_STORE"
+    cp -a /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub "$HOSTKEY_STORE"/ 2>/dev/null || true
+    chmod 600 "$HOSTKEY_STORE"/ssh_host_*_key 2>/dev/null || true
+    echo "✅ 已將 SSH host key 備份到 /persistent（首次）"
 fi
 
 # Create SSH user if specified (only on first run)
@@ -68,13 +90,10 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
             ln -sfn /workspace "/home/$SSH_USER/workspace"
         fi
 
-        # Seed Claude Code config from the build-time install ONLY when the SSH
-        # user's ~/.claude is empty/missing. When it is a persisted host volume
-        # (see docker-compose.yml) with existing content, leave it untouched.
-        mkdir -p "/home/$SSH_USER/.claude"
-        if [ -d /root/.claude ] && [ -z "$(ls -A "/home/$SSH_USER/.claude" 2>/dev/null)" ]; then
-            cp -a /root/.claude/. "/home/$SSH_USER/.claude/"
-            # Fix hardcoded /root/ paths in plugin manifests & Claude config files
+        # Copy Claude Code config to SSH user (plugins, settings, etc.)
+        if [ -d /root/.claude ]; then
+            cp -r /root/.claude "/home/$SSH_USER/.claude"
+            # Fix any hardcoded /root/ paths in Claude config files
             find "/home/$SSH_USER/.claude" -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" \) \
                 -exec sed -i "s|/root|/home/$SSH_USER|g" {} + 2>/dev/null || true
         fi
@@ -138,22 +157,83 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Always update password (in case it changed)
     echo "$SSH_USER:$SSH_PASSWORD" | chpasswd
 
-    # Setup SSH key authentication from mounted host key
-    if [ -f /tmp/host_ssh_key.pub ]; then
+    # Setup SSH key authentication.
+    # 授權來源優先序：
+    #   1) /tmp/authorized_keys —— 你在 repo 自維護的公鑰清單（config/authorized_keys），
+    #      與「跑在哪台主機」無關，本機 / VPS 都用同一份（建議做法）。
+    #   2) /tmp/host_ssh_key.pub —— 舊機制：掛載主機自己的公鑰（向後相容）。
+    if [ -f /tmp/authorized_keys ]; then
+        AUTH_KEYS_SRC=/tmp/authorized_keys
+    elif [ -f /tmp/host_ssh_key.pub ]; then
+        AUTH_KEYS_SRC=/tmp/host_ssh_key.pub
+    else
+        AUTH_KEYS_SRC=""
+    fi
+    if [ -n "$AUTH_KEYS_SRC" ]; then
         mkdir -p "/home/$SSH_USER/.ssh"
-        cp /tmp/host_ssh_key.pub "/home/$SSH_USER/.ssh/authorized_keys"
+        cp "$AUTH_KEYS_SRC" "/home/$SSH_USER/.ssh/authorized_keys"
         chmod 700 "/home/$SSH_USER/.ssh"
         chmod 600 "/home/$SSH_USER/.ssh/authorized_keys"
         chown -R "$SSH_USER:$SSH_USER" "/home/$SSH_USER/.ssh"
-        echo "✅ SSH key authentication configured for '$SSH_USER'"
+        echo "✅ SSH key authentication configured for '$SSH_USER' (source: $AUTH_KEYS_SRC)"
+    fi
+
+    # ── 持久家目錄資料自動還原（survives container recreate）──
+    # 持久資料放在主機，透過 /persistent 掛載進來，每次啟動自動還原到家目錄。
+    # 要新增其他持久資料，把對應目錄放進主機的 .devcontainer-home 即可。
+    if [ -d /persistent ]; then
+        # SSH 私鑰：複製進家目錄並修好嚴格權限（金鑰是靜態的，用複製最安全）
+        if [ -d /persistent/.ssh ]; then
+            mkdir -p "/home/$SSH_USER/.ssh"
+            cp -a /persistent/.ssh/. "/home/$SSH_USER/.ssh/" 2>/dev/null || true
+            # authorized_keys 以掛載的公鑰清單為準（優先 /tmp/authorized_keys，
+            # 相容舊的 /tmp/host_ssh_key.pub），確保還原後 SSH 登入仍正常。
+            [ -n "$AUTH_KEYS_SRC" ] && cp "$AUTH_KEYS_SRC" "/home/$SSH_USER/.ssh/authorized_keys"
+            chown -R "$SSH_USER:$SSH_USER" "/home/$SSH_USER/.ssh"
+            chmod 700 "/home/$SSH_USER/.ssh"
+            chmod 600 "/home/$SSH_USER/.ssh/"* 2>/dev/null || true
+        fi
+
+        # ── 持久化 Claude / Codex 的對話與 resume 紀錄 ──
+        # 這些資料會持續寫入，用 symlink 直接指向 /persistent（掛載到主機），
+        # 讓 `claude --resume`、codex 的歷史在容器重建後依然保留。
+        # 要新增其他要持久化的家目錄路徑，照樣加一行 persist_link 即可。
+        persist_link() {  # $1=家目錄相對路徑  $2=dir|file|json
+            local rel="$1" kind="$2" home="/home/$SSH_USER"
+            local src="/persistent/$rel" dst="$home/$rel"
+            mkdir -p "$(dirname "$src")" "$(dirname "$dst")"
+            case "$kind" in
+                dir)  mkdir -p "$src" ;;
+                json) [ -e "$src" ] || echo '{}' > "$src" ;;   # 種一個合法空 JSON，避免程式讀到壞檔
+                *)    [ -e "$src" ] || : > "$src" ;;            # 空檔（.jsonl 空內容是合法的）
+            esac
+            rm -rf "$dst"
+            ln -sfn "$src" "$dst"
+            chown -h "$SSH_USER:$SSH_USER" "$dst"
+            chown -R "$SSH_USER:$SSH_USER" "$src" 2>/dev/null || true
+        }
+        # Claude Code：對話 transcript（--resume 讀這裡）、todo、歷史、專案/帳號狀態
+        persist_link ".claude/projects"      dir
+        persist_link ".claude/todos"         dir
+        persist_link ".claude/history.jsonl" file
+        persist_link ".claude.json"          json
+        # Codex CLI：整個 ~/.codex（sessions、history、config、auth 都在裡面）
+        persist_link ".codex"                dir
+
+        echo "✅ 持久家目錄資料已從 /persistent 還原（含 Claude/Codex 對話與 resume 紀錄）"
     fi
 fi
 
 # Configure SSH daemon
+# 安全性：僅允許金鑰登入，關閉密碼與 root 直接登入。
+#   - 登入方式：以 $SSH_USER + 你維護的公鑰清單（config/authorized_keys）。
+#   - 前提：docker-compose.yml 掛載 config/authorized_keys，且裡面至少有一把
+#     你用戶端的公鑰，否則會無法登入。
+#   - 若臨時需要密碼登入救援，可將 PasswordAuthentication 暫時改回 yes 再重建。
 cat > /etc/ssh/sshd_config << EOF
 Port 22
-PermitRootLogin yes
-PasswordAuthentication yes
+PermitRootLogin no
+PasswordAuthentication no
 PubkeyAuthentication yes
 AuthorizedKeysFile .ssh/authorized_keys
 ChallengeResponseAuthentication no
