@@ -135,31 +135,35 @@ and **Gemini CLI**. These are installed at *build time* as Claude Code **plugins
 nothing is copied into `~/.claude` by hand, so they update via `claude plugin update`
 and don't get duplicated on rebuilds.
 
-A host directory is bind-mounted so state survives container rebuilds/recreates:
+State survives container rebuilds/recreates through **one** host directory bind-mounted at
+`/persistent` (host path from `PERSIST_HOME_DIR` in `.env`, e.g. `~/.devcontainer-home`).
+每次啟動時，`ssh-setup.sh` 會把下列資料還原到 SSH 使用者的家目錄：
 
-| Container path | Host path (`.env`) | What it holds |
+| 持久項目 | 機制 | 內容 |
 |---|---|---|
-| `~/.claude`    | `HOST_CLAUDE_DIR` (default `./.persist/claude`)       | Claude Code config: `settings.json`, `CLAUDE.md`, `skills/learned/`, plugin cache |
+| SSH host keys    | `/persistent/ssh_host_keys` | 容器重建後 host key 不變（不再每次跳指紋警告） |
+| SSH private keys | 從 `/persistent/.ssh` 複製 | 家目錄的 `~/.ssh` 私鑰 |
+| Claude 對話/resume | symlink → `/persistent` | `~/.claude/projects`、`todos`、`history.jsonl`、`~/.claude.json`（`claude --resume` 讀這裡） |
+| Codex CLI        | symlink → `/persistent` | 整個 `~/.codex`（sessions、history、config、auth） |
 
-**First-time migration** (if you already have a running container with data): copy your
-current dirs into the host paths *before* the first `docker compose up` with the new mounts —
-from inside the running container, e.g.:
+SSH 登入為**僅金鑰**（不開密碼、不開 root）：你在 `config/authorized_keys` 維護的用戶端
+公鑰清單會掛載到 `/tmp/authorized_keys`，並套用到 `~/.ssh/authorized_keys`。
 
-```bash
-mkdir -p /workspace/.persist
-cp -a ~/.claude     /workspace/.persist/claude
-# (adjust if HOST_WORK_DIR is not this project dir)
-```
+> **首次設定**：把 `PERSIST_HOME_DIR` 指到一個主機目錄即可（空目錄會在首次啟動時自動建立內容）。
+> 若要沿用既有容器的資料，在第一次 `docker compose up` 前，把 `~/.ssh`、`~/.claude/projects`、
+> `~/.claude.json`、`~/.codex` 複製進那個目錄。
 
 ## 📁 Project Structure
 
 ```
 ├── Dockerfile              # Container definition
-├── docker-compose.yml      # Service configuration
+├── docker-compose.yml      # Service configuration (base, no GPU)
+├── docker-compose.gpu.yml  # GPU override (NVIDIA Linux hosts only)
 ├── config/
 │   ├── zsh/                # ZSH configuration
+│   ├── tmux/               # tmux configuration
+│   ├── authorized_keys.example  # 公鑰清單範本（複製成 authorized_keys 使用）
 │   └── scripts/            # Utility scripts
-├── .persist/               # Bind-mounted ~/.claude (gitignored)
 └── README.md
 ```
 
