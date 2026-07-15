@@ -37,7 +37,7 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
         useradd -m -s /bin/zsh "$SSH_USER"
 
         # /home/$SSH_USER may already exist (Docker pre-creates it as root when
-        # ~/.claude / ~/.mempalace are bind-mounted), in which case `useradd -m`
+        # host dirs are bind-mounted into it), in which case `useradd -m`
         # leaves it root-owned. Fix that now so the `sudo -u $SSH_USER` steps
         # below (oh-my-zsh, p10k, uv, cargo) can write into it.
         chown "$SSH_USER:$SSH_USER" "/home/$SSH_USER"
@@ -98,31 +98,18 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
                 -exec sed -i "s|/root|/home/$SSH_USER|g" {} + 2>/dev/null || true
         fi
 
-        # Register the ECC + MemPalace marketplaces and install the plugins at
-        # RUNTIME (after the bind-mount): the Dockerfile's build-time
-        # `claude plugin install` lands in /root/.claude, which the SSH user's
-        # bind-mounted ~/.claude shadows, so the build-time install never
-        # reaches this user. All idempotent; failures are non-fatal.
+        # Register the ECC marketplace and install the plugin at RUNTIME (after
+        # the bind-mount): the Dockerfile's build-time `claude plugin install`
+        # lands in /root/.claude, which the SSH user's bind-mounted ~/.claude
+        # shadows, so the build-time install never reaches this user. All
+        # idempotent; failures are non-fatal.
         CLAUDE_BIN="/home/$SSH_USER/.local/bin/claude"
         if [ -x "$CLAUDE_BIN" ]; then
-            # `mempalace` plugin marketplace = a local git clone (pip installs the
-            # python package, not this repo — that's what the marketplace points at).
-            sudo -u "$SSH_USER" git clone --depth 1 https://github.com/milla-jovovich/mempalace.git \
-                "/home/$SSH_USER/.local/share/mempalace" >/dev/null 2>&1 || true
             # Drop a stale plugin id a migrated ~/.claude may carry (ECC's plugin
             # was renamed everything-claude-code -> ecc upstream).
             sudo -u "$SSH_USER" "$CLAUDE_BIN" plugin uninstall everything-claude-code@everything-claude-code >/dev/null 2>&1 || true
             sudo -u "$SSH_USER" "$CLAUDE_BIN" plugin marketplace add https://github.com/affaan-m/everything-claude-code.git >/dev/null 2>&1 || true
-            sudo -u "$SSH_USER" "$CLAUDE_BIN" plugin marketplace add https://github.com/milla-jovovich/mempalace.git >/dev/null 2>&1 || true
             sudo -u "$SSH_USER" "$CLAUDE_BIN" plugin install ecc@ecc >/dev/null 2>&1 || true
-            sudo -u "$SSH_USER" "$CLAUDE_BIN" plugin install mempalace@mempalace >/dev/null 2>&1 || true
-        fi
-
-        # MemPalace memory dir — persisted via host volume; the palace itself
-        # bootstraps on first hook run. Seed from the build-time install if any.
-        mkdir -p "/home/$SSH_USER/.mempalace"
-        if [ -d /root/.mempalace ] && [ -z "$(ls -A "/home/$SSH_USER/.mempalace" 2>/dev/null)" ]; then
-            cp -a /root/.mempalace/. "/home/$SSH_USER/.mempalace/"
         fi
 
         # Codex config dir (auth.json, config.toml, AGENTS.md) — persisted via
