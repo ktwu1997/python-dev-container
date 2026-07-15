@@ -20,6 +20,11 @@ services:
       - ./config/authorized_keys:/tmp/authorized_keys:ro
       # 持久家目錄資料（SSH 私鑰…），由 ssh-setup.sh 於啟動時還原到家目錄
       - ${PERSIST_HOME_DIR}:/persistent
+      # Obsidian vault（iCloud）掛載到 /workspace/obsidian，可讀可寫。
+      # 用 long syntax 因為 iCloud 路徑含空白與特殊字元，較不易被解析錯。
+      - type: bind
+        source: ${OBSIDIAN_VAULT_DIR}
+        target: /workspace/obsidian
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1

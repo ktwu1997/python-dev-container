@@ -1,0 +1,14 @@
+# authorized_keys —— 允許登入這個 dev container 的用戶端公鑰清單
+#
+# 用法：一行一把「公鑰」（.pub 內容，通常以 ssh-ed25519 或 ssh-rsa 開頭）。
+#   - 以 # 開頭的行會被 sshd 忽略（註解）。
+#   - 這份檔案會被 docker-compose.yml 掛載到容器，並設為 SSH 使用者的
+#     ~/.ssh/authorized_keys，與容器跑在本機或 VPS 無關。
+#   - 公鑰不是機密，可安全放進 repo；若不想入版控，可自行加進 .gitignore。
+#
+# 加入你目前這台 Mac 的公鑰（在終端機執行）：
+#   cat ~/.ssh/id_ed25519.pub >> "此檔案路徑"
+#
+# 範例（請換成你自己的公鑰，勿直接使用）：
+# ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...你的公鑰... you@your-mac
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAXrtYltaOGoCaxeXZW57HTT/liEGrKWMSc83Lb1f5A/ tsung_30_container
